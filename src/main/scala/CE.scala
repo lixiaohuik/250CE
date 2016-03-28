@@ -77,4 +77,4 @@ class ShiftReg (width:Int, n:Int) extends Module {
   io.out := delays
 }
 // the output is the whole vec, can be used to store the weight as well
-
+// create several vec to store: original data, original PT, current weight (all length:width)
