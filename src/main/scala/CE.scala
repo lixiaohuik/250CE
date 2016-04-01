@@ -15,7 +15,8 @@ case class CEParams {
     pt_position: DSPUInt=3
     frame_size: DSPUInt=20
     data_size: DSPUInt=2
-    pt_value: DSPUInt=2
+    pt_value_r: DSPUInt=2
+    pt_value_i: DSPUInt=2
     width: DSPUInt=5
 }
 
@@ -30,8 +31,10 @@ class CEIO [T <: DSPQnm[T]](gen : => T) extends IOBundle {
 }
 
   val  pt_number = ceil(params.frame_size/pt_position) //division ?
-  val  stored_Weight= (0 until pt_number).map(i => Reg(init = DSPUInt(1, width = data_size)))
-  val tmp_weight = Reg(init = DSPUInt(1, width = data_size))
+  val  stored_Weight_r= (0 until pt_number).map(i => Reg(init = DSPUInt(1, width = data_size)))
+  val  stored_Weight_i= (0 until pt_number).map(i => Reg(init = DSPUInt(1, width = data_size)))
+  val tmp_weight_r = Reg(init = DSPUInt(1, width = data_size))
+  val tmp_weight_i = Reg(init = DSPUInt(1, width = data_size))
 
 //determine whether is pilot tone using the position comb type
   val sigCount = Reg(init = DSPUInt(0, width = data_size)
@@ -39,42 +42,30 @@ class CEIO [T <: DSPQnm[T]](gen : => T) extends IOBundle {
   val IsPT = DSPBool(false) //no need here, but needed for other PT position
   if (sigCount !== frame_size ){
       sigCount := sigCount + DSPUInt(1)
-      if (sigCount%p.pt_position == DSPUInt(1) ){ //input is a PT
-      IsPT := DSPBool(true)
-      PTcount := PTcount + DSPUInt(1)
-      //do calculation here
-      tmp_weight := stored_Weight(PTCount)
-      signalOut_real := tmp_weight * signalIn.real.toUInt // toUInt?
-      val error = params.pt_value - signalOut_real
-      f = mu * error * signalIn.real.toUInt
-      store_Weight(PTCount) := alpha * tmp_weight + f 
       }.otherwise{
-      IsPT := DSPBool(false)
-      PTcount := PTcount + DSPUInt(1)
-      //do calculation here
-      tmp_weight := stored_Weight(PTCount)
-      signalOut_real := tmp_weight * signalIn.real.toUInt // toUInt?
+          sigCount := DSPUInt(0)
+          PTCount := DSPUInt(0)
       }
-  }.otherwise{
-      sigCount := DSPUInt(0) //reset the counter for a new frame
-      PTCount := DSPUInt(0)
-      // same thing 
-      if (sigCount%p.pt_position == DSPUInt(1) ){ //input is a PT
+  if (sigCount%p.pt_position == DSPUInt(1) ){ //input is a PT
       IsPT := DSPBool(true)
       PTcount := PTcount + DSPUInt(1)
       //do calculation here
-      tmp_weight := stored_Weight(PTCount)
-      signalOut_real := tmp_weight * signalIn.real.toUInt // toUInt?
-      val error = params.pt_value - signalOut_real
-      f = mu * error * signalIn.real.toUInt
-      store_Weight(PTCount) := alpha * tmp_weight + f 
+      tmp_weight_r := stored_Weight_r(PTCount)
+      tmp_weight_i := stored_Weight_i(PTCount)
+      signalOut_real := tmp_weight_r * signalIn.real.toUInt // toUInt?
+      signalOut_imag := tmp_weight_i * signalIn.imag.toUInt // toUInt?
+      val error_r = params.pt_value_r - signalOut_real
+      val error_i = params.pt_value_i - signalOut_imag
+      f_r = params.mu * error_r * signalIn.real.toUInt
+      f_i = params.mu * error_i * signalIn.imag.toUInt
+      store_Weight_r(PTCount) := alpha * tmp_weight_r + f_r 
+      store_Weight_i(PTCount) := alpha * tmp_weight_i + f_i 
       }.otherwise{
-      IsPT := DSPBool(false)
-      PTcount := PTcount + DSPUInt(1)
-      //do calculation here
-      tmp_weight := stored_Weight(PTCount)
-      signalOut_real := tmp_weight * signalIn.real.toUInt // toUInt?
-      } 
-   }
-
+          IsPT := DSPBool(false)
+          //do calculation here
+          tmp_weight_r := stored_Weight_r(PTCount)
+          tmp_weight_i := stored_Weight_i(PTCount)
+          signalOut_real := tmp_weight_r * signalIn.real.toUInt // toUInt?
+          signalOut_imag := tmp_weight_i * signalIn.imag.toUInt // toUInt?
+      }
 }
