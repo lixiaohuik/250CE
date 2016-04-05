@@ -6,21 +6,22 @@ import Chisel.{Complex => _, Mux => _, Reg => _, RegNext => _, RegInit => _, Pip
 import ChiselDSP._
 // ------- Imports END -- OK TO MODIFY BELOW
 
+
 /** Module that supports both fixed and floating point testing */
 // assum have the pilot tone first?
 
-case class CEParams {
-    mu: Double=1.0
-    alpha: Double=1.0
-    pt_position: DSPUInt=3
-    frame_size: DSPUInt=20
-    data_size: DSPUInt=2
-    pt_value_r: DSPUInt=2
-    pt_value_i: DSPUInt=2
-    width: DSPUInt=5
+class CEParams {
+    var mu:		Double	= 1.0
+    var alpha:		Double	= 1.0
+    var pt_position: 	DSPUInt	= ChiselDSP.DSPUInt(3)
+    var frame_size: 	DSPUInt = ChiselDSP.DSPUInt(20)
+    var data_size: 	DSPUInt = ChiselDSP.DSPUInt(2)
+    var pt_value_r: 	DSPUInt = ChiselDSP.DSPUInt(2)
+    var pt_value_i: 	DSPUInt = ChiselDSP.DSPUInt(2)
+    var width: 		DSPUInt = ChiselDSP.DSPUInt(5)
 }
 
-class CE[T <: DSPQnm[T]](gen : => T) extends GenDSPModule (gen) {
+class CE[T <: DSPQnm[T]](gen : => T, params : => CEParams) extends GenDSPModule (gen) {
 //class CE(implicit params: CEParams) extends GenDSPModule (gen) {
 
 class CEIO [T <: DSPQnm[T]](gen : => T) extends IOBundle {
@@ -30,15 +31,15 @@ class CEIO [T <: DSPQnm[T]](gen : => T) extends IOBundle {
   val signalOut_imag = DSPUInt (OUTPUT, params.data_size )
 }
 
-  val  pt_number = ceil(params.frame_size/pt_position) //division ?
+  val  pt_number = math.ceil(params.frame_size/params.pt_position) //division ?
   val  stored_Weight_r= (0 until pt_number).map(i => Reg(init = DSPUInt(1, width = data_size)))
   val  stored_Weight_i= (0 until pt_number).map(i => Reg(init = DSPUInt(1, width = data_size)))
   val tmp_weight_r = Reg(init = DSPUInt(1, width = data_size))
   val tmp_weight_i = Reg(init = DSPUInt(1, width = data_size))
 
 //determine whether is pilot tone using the position comb type
-  val sigCount = Reg(init = DSPUInt(0, width = data_size)
-  val PTCount = Reg(init = DSPUInt(0, width = data_size)
+  val sigCount = Reg(init = DSPUInt(0, width = data_size))
+  val PTCount = Reg(init = DSPUInt(0, width = data_size))
   val IsPT = DSPBool(false) //no need here, but needed for other PT position
   if (sigCount !== frame_size ){
       sigCount := sigCount + DSPUInt(1)
