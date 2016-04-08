@@ -24,6 +24,7 @@ for (i <- 0 until r_test_input.length){
 	  i_writer.write(i_output.toString)
 	  step(1)
 	  }
-writer.close()
+r_writer.close()
+i_writer.close()
 
 }

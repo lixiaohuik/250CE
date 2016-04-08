@@ -14,8 +14,8 @@ class CEParams {
     
   var mu:		Double	= 1.0
   var alpha:		Double	= 1.0
-  var pt_position: 	Int	= 4
-  var frame_size: 	Int 	= 20
+  var pt_position: 	Int	= 2
+  var frame_size: 	Int 	= 4
   var min_value:	Double  = -255.0			// DSPFixed uses min value to determine bit width rather than actual bit width
   var max_value: 	Double 	= 255.0				// DSPFixed uses max value to determine bit width rather than actual bit width
   var frac_width:	Int	= 32				// DSPFixed has extra argument for fraction width
