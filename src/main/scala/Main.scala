@@ -3,8 +3,9 @@ import ChiselDSP._
 
 /** Composition of generator input parameters */
 case class GeneratorParams(complex: ComplexParams = ComplexParams(),
-                           clock: ClockParams = ClockParams()
-                          ) extends JSONParams(complex,clock)
+                           clock: ClockParams = ClockParams(),
+    			   ce: CEParams = CEParams()
+    			) extends JSONParams(complex,clock)
 
 object Main {
 
@@ -16,9 +17,9 @@ object Main {
     // Setup module + tester
     val demoArgs = args.slice(1, args.length)
     if (isFixed)
-      Chisel.chiselMainTest(demoArgs, () => DSPModule(new CE({DSPFixed()}))) { c => new CETests(c) }
+      Chisel.chiselMainTest(demoArgs, () => DSPModule(new CE({DSPFixed()}, p.ce))) { c => new CETests(c) }
     else
-      Chisel.chiselMainTest(demoArgs, () => DSPModule(new CE({DSPDbl()}))) { c => new CETests(c) }
+      Chisel.chiselMainTest(demoArgs, () => DSPModule(new CE({DSPDbl()}, p.ce))) { c => new CETests(c) }
 
   }
 
