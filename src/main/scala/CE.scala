@@ -51,8 +51,8 @@ class CEIO [T <: DSPQnm[T]](gen : => T, p : CEParams) extends IOBundle {
   val pt_value_i = DSPFixed(p.pt_value_i, p.frac_width)
 
 //determine whether is pilot tone using the position comb type
-  val sigCount = UInt(0)
-  val PTCount = UInt(0)
+  val sigCount = RegInit(UInt(0,width = 32))
+  val PTCount =  RegInit(UInt(0,width = 32))
   val IsPT = Bool(false) //no need here, but needed for other PT position
   when (sigCount =/= UInt(p.frame_size) ){
     sigCount := sigCount + UInt(1)
@@ -65,23 +65,23 @@ class CEIO [T <: DSPQnm[T]](gen : => T, p : CEParams) extends IOBundle {
     PTCount := PTCount + UInt(1)
     //do calculation here
     println(stored_Weight_r(0))// print the vec
-    tmp_weight_r := stored_Weight_r(PTCount)
+//    tmp_weight_r := stored_Weight_r(PTCount)
     println(tmp_weight_r)// print the assigned
-    tmp_weight_i := stored_Weight_i(PTCount)
+//    tmp_weight_i := stored_Weight_i(PTCount)
     io.signalOut_real := tmp_weight_r * io.signalIn_real
     io.signalOut_imag := tmp_weight_i * io.signalIn_imag
     val error_r = pt_value_r - io.signalOut_real
     val error_i = pt_value_i - io.signalOut_imag
     val f_r = DSPFixed(p.mu, p.frac_width) * error_r * io.signalIn_real
     val f_i = DSPFixed(p.mu, p.frac_width) * error_i * io.signalIn_imag
-    stored_Weight_r(PTCount) := DSPFixed(p.alpha, p.frac_width) * tmp_weight_r + f_r
-    stored_Weight_i(PTCount) := DSPFixed(p.alpha, p.frac_width) * tmp_weight_i + f_i
-  }.otherwise{
+    //stored_Weight_r(PTCount) := DSPFixed(p.alpha, p.frac_width) * tmp_weight_r + f_r
+    //stored_Weight_i(PTCount) := DSPFixed(p.alpha, p.frac_width) * tmp_weight_i + f_i
+  }.otherwise {
     IsPT := Bool(false)
     //do calculation here
-    tmp_weight_r := stored_Weight_r(PTCount)
-    tmp_weight_i := stored_Weight_i(PTCount)
-    io.signalOut_real := tmp_weight_r * io.signalIn_real
-    io.signalOut_imag := tmp_weight_i * io.signalIn_imag
+//    tmp_weight_r := stored_Weight_r(PTCount)
+//    tmp_weight_i := stored_Weight_i(PTCount)
+    //io.signalOut_real := tmp_weight_r * io.signalIn_real
+    //io.signalOut_imag := tmp_weight_i * io.signalIn_imag
   }
 }
