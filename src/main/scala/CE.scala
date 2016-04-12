@@ -71,7 +71,7 @@ class CEIO [T <: DSPQnm[T]](gen : => T, p : CEParams) extends IOBundle {
     val signalOut_imag_long = tmp_weight_i * io.signalIn_imag
 //    println(io.signalOut_real.getRange)
     //io.signalOut_real := signalOut_real_long.shorten(io.signalOut_real.getRange)
-    //io.signalOut_imag := signalOut_imag_long.shorten(io.signalOut_imag.getRange)
+    //io.signalOut_imag := signalOut_imag_long.shorten(io.signalOut_imag.getRange) TODO:use $$
            io.signalOut_real := signalOut_real_long.shorten(p.frac_width_big,p.frac_width_big)
            //io.signalOut_imag := signalOut_imag_long.shorten(p.frac_width)
     val error_r = pt_value_r - io.signalOut_real
