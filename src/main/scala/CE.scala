@@ -33,6 +33,10 @@ class CE[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
 
 class CEIO [T <: DSPQnm[T]](gen : => T, p : CEParams) extends IOBundle {
 
+//  val signalIn_real  = gen.asInput 
+//  val signalIn_imag  = gen.asInput 
+//  val signalOut_real = gen.asOutput
+//  val signalOut_imag = gen.asOutput
   val signalIn_real = DSPFixed(INPUT, p.frac_width, (p.min_value, p.max_value))
   val signalIn_imag = DSPFixed(INPUT, p.frac_width, (p.min_value, p.max_value))
   val signalOut_real = DSPFixed(OUTPUT, p.frac_width, (p.min_value, p.max_value))
@@ -49,8 +53,9 @@ class CEIO [T <: DSPQnm[T]](gen : => T, p : CEParams) extends IOBundle {
   val pt_value_i = DSPFixed(p.pt_value_i, p.frac_width)
 
 //determine whether is pilot tone using the position comb type
-  val sigCount = RegInit(UInt(0,width = 32))
-  val PTCount =  RegInit(UInt(0,width = 32))
+  val sigCount = RegInit(UInt(0,width = (math.ceil(math.log(p.frame_size)*4)).toInt))
+  val PTCount =  RegInit(UInt(0,width = (math.ceil(math.log(pt_number)*4)).toInt))
+    println(sigCount)
   val IsPT = Bool(false) //no need here, but needed for other PT position
   when (sigCount =/= UInt(p.frame_size) ){
     sigCount := sigCount + UInt(1)
