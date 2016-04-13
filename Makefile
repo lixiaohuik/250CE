@@ -1,4 +1,4 @@
-PRJ ?= FFT
+PRJ ?= CE
 MEM ?=--inlineMem
 FIXED ?= true
 VERILOGTB ?= false
