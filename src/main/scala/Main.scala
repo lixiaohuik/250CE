@@ -4,7 +4,7 @@ import ChiselDSP._
 /** Composition of generator input parameters */
 case class GeneratorParams(complex: ComplexParams = ComplexParams(),
                            clock: ClockParams = ClockParams(),
-    			   ce: CEParams = CEParams()
+    			   ce: CEParams = new CEParams()
     			) extends JSONParams(complex,clock)
 
 object Main {
