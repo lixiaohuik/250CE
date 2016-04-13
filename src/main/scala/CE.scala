@@ -12,14 +12,13 @@ import ChiselDSP._
 
 case class CEParams (
     
-   mu:		Double	= 1.0,
+   mu:		Double	= 0.1,
    alpha:	Double	= 1.0,
    pt_position: Int	= 2,
    frame_size: 	Int 	= 4,
    min_value:	Double  = -127.0,			// DSPFixed uses min value to determine bit width rather than actual bit width,
    max_value: 	Double 	= 127.0,				// DSPFixed uses max value to determine bit width rather than actual bit width,
    frac_width:	Int	= 32,				// DSPFixed has extra argument for fraction width,
-   frac_width_big:	BigInt	= 16,				// DSPFixed has extra argument for fraction width,
 
   // At some point I'd like to make width > 1 so the pt_values should be vectors rather than one value once that happens
    //pt_value_r: 	DSPFixed = DSPFixed(1.0, 32),	
