@@ -1,8 +1,8 @@
 package CE
 import ChiselDSP._
 import Chisel.{Complex => _, _}
-//import scala.io.Source
-//import java.io._
+import scala.io.Source
+import java.io._
 
 
 // WARNING: MULTIPLE CLOCK DOMAINS NOT SUPPORTED. POKED LOGIC MUST BE CLOCKED! (For VerilogTB to function)
