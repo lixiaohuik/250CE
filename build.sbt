@@ -22,7 +22,7 @@ lazy val ChiselDSP = ProjectRef(
 )
 
 lazy val root = Project(
-  id = fix-me,
+  id = "CE",
   base = file("."),
   settings = prjSettings
 ).dependsOn(ChiselDSP
