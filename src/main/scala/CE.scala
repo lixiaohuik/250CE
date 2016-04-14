@@ -60,8 +60,10 @@ class CEIO [T <: DSPQnm[T]](gen : => T, p : CEParams) extends IOBundle {
 //tmp_weight is determined by interpolation method
 //reset counter for each frame TODO: or use the output from FFT to indicate the start of each frame  
 
-  val tmp_weight_r  = double2T(1.0, p.frac_width)
-  val tmp_weight_i  = double2T(1.0, p.frac_width)
+  //val tmp_weight_r  = double2T(1.0, p.frac_width)
+  //val tmp_weight_i  = double2T(1.0, p.frac_width)
+  val tmp_weight_r  = DSPUInt(BigInt(1),max = BigInt(5) )
+  val tmp_weight_i  = DSPUInt(BigInt(1),max = BigInt(5) )
 
   when (sigCount =/= UInt(p.frame_size)){
     sigCount := sigCount + UInt(1)
