@@ -74,8 +74,8 @@ class CEIO [T <: DSPQnm[T]](gen : => T, p : CEParams) extends IOBundle {
     IsPT := Bool(true)
     PTCount := PTCount + UInt(1)  //TODO:if the last signal in this fram is PT willcause problem
     sigPosition := UInt(0)
-    tmp_weight_r := stored_Weight_r(PTCount)
-    tmp_weight_i := stored_Weight_i(PTCount)
+    tmp_weight_r := stored_Weight_r(PTCount).shorten (tmp_weight_r.getRange) $ (tmp_weight_r.getFracWidth)
+    tmp_weight_i := stored_Weight_i(PTCount).shorten (tmp_weight_i.getRange) $ (tmp_weight_i.getFracWidth)
     //do calculation here to update weight
     val error_r = pt_value_r - io.signalOut_real
     val f_r = double2T(p.mu, p.frac_width) * error_r * io.signalIn_real
@@ -95,11 +95,11 @@ class CEIO [T <: DSPQnm[T]](gen : => T, p : CEParams) extends IOBundle {
     // 
         when (UInt(p.interp) === UInt(0)){
 
-    tmp_weight_r := stored_Weight_r(PTCount)
-    tmp_weight_i := stored_Weight_i(PTCount)
+    tmp_weight_r := stored_Weight_r(PTCount).shorten (tmp_weight_r.getRange) $ (tmp_weight_r.getFracWidth)
+    tmp_weight_i := stored_Weight_i(PTCount).shorten (tmp_weight_i.getRange) $ (tmp_weight_i.getFracWidth)
         }.otherwise {
-    tmp_weight_r := stored_Weight_r(PTCount)
-    tmp_weight_i := stored_Weight_i(PTCount)
+    tmp_weight_r := stored_Weight_r(PTCount).shorten (tmp_weight_r.getRange) $ (tmp_weight_r.getFracWidth)
+    tmp_weight_i := stored_Weight_i(PTCount).shorten (tmp_weight_i.getRange) $ (tmp_weight_i.getFracWidth)
 //            val next_w = sigPosition/UInt(p.pt_position)
 //            val current_w = UInt(1) - next_w
 //	    println (current_w)
