@@ -45,11 +45,11 @@ class CEIO [T <: DSPQnm[T]](gen : => T, p : CEParams) extends IOBundle {
   override val io = new CEIO(gen, p) 
 
   val pt_number = (math.ceil(p.frame_size.toDouble/p.pt_position.toDouble)).toInt 
-  val stored_Weight_r = Vec.fill(pt_number){RegInit(DSPFixed(1.0, p.frac_width))}
-  val stored_Weight_i = Vec.fill(pt_number){RegInit(DSPFixed(1.0, p.frac_width))}
+  val stored_Weight_r = Vec.fill(pt_number){RegInit(double2T(1.0, p.frac_width))}
+  val stored_Weight_i = Vec.fill(pt_number){RegInit(double2T(1.0, p.frac_width))}
 
-  val pt_value_r = DSPFixed(p.pt_value_r, p.frac_width)
-  val pt_value_i = DSPFixed(p.pt_value_i, p.frac_width)
+  val pt_value_r = double2T(p.pt_value_r, p.frac_width)
+  val pt_value_i = double2T(p.pt_value_i, p.frac_width)
 
 //determine whether is pilot tone using the position comb type
   val sigCount = RegInit(UInt(0,width = (math.ceil(math.log(p.frame_size)*4)).toInt))
@@ -78,22 +78,23 @@ class CEIO [T <: DSPQnm[T]](gen : => T, p : CEParams) extends IOBundle {
     val tmp_weight_i = stored_Weight_i(PTCount)
     val signalOut_real_long = tmp_weight_r * io.signalIn_real
     val signalOut_imag_long = tmp_weight_i * io.signalIn_imag
-    val temp_real_O = signalOut_real_long $(p.frac_width)
-    val temp_imag_O = signalOut_imag_long $(p.frac_width)
+    val temp_real_O = signalOut_real_long $(io.signalOut_real.getFracWidth)
+    val temp_imag_O = signalOut_imag_long $(io.signalOut_imag.getFracWidth)
     io.signalOut_real := temp_real_O.shorten(io.signalOut_real.getRange)
     io.signalOut_imag := temp_imag_O.shorten(io.signalOut_imag.getRange)
     
     val error_r = pt_value_r - io.signalOut_real
     val error_i = pt_value_i - io.signalOut_imag
-    val f_r = DSPFixed(p.mu, p.frac_width) * error_r * io.signalIn_real
-    val f_i = DSPFixed(p.mu, p.frac_width) * error_i * io.signalIn_imag
+    val f_r = double2T(p.mu, p.frac_width) * error_r * io.signalIn_real
+    val f_i = double2T(p.mu, p.frac_width) * error_i * io.signalIn_imag
  
-    val stored_Weight_r_long = DSPFixed(p.alpha, p.frac_width) * tmp_weight_r + f_r
-    val stored_Weight_i_long = DSPFixed(p.alpha, p.frac_width) * tmp_weight_i + f_i
+    val stored_Weight_r_long = double2T(p.alpha, p.frac_width) * tmp_weight_r + f_r
+    val stored_Weight_i_long = double2T(p.alpha, p.frac_width) * tmp_weight_i + f_i
    
-    val temp_real_W = stored_Weight_r_long $(p.frac_width)
+    val temp_real_W = stored_Weight_r_long $(tmp_weight_r.getFracWidth)
+    
     stored_Weight_r(PTCount) := temp_real_W.shorten(stored_Weight_r(PTCount).getRange)
-    val temp_imag_W = stored_Weight_i_long $(p.frac_width)
+    val temp_imag_W = stored_Weight_i_long $(tmp_weight_r.getFracWidth)
     stored_Weight_i(PTCount) := temp_imag_W.shorten(stored_Weight_i(PTCount).getRange)
   }.otherwise {
     IsPT := Bool(false)
@@ -105,15 +106,15 @@ class CEIO [T <: DSPQnm[T]](gen : => T, p : CEParams) extends IOBundle {
 
             val signalOut_real_long = tmp_weight_r * io.signalIn_real
             val signalOut_imag_long = tmp_weight_i * io.signalIn_imag
-            val temp_real_O = signalOut_real_long $(p.frac_width)
-            val temp_imag_O = signalOut_imag_long $(p.frac_width)
+            val temp_real_O = signalOut_real_long $(io.signalOut_real.getFracWidth)
+            val temp_imag_O = signalOut_imag_long $(io.signalOut_imag.getFracWidth)
             io.signalOut_real := temp_real_O.shorten(io.signalOut_real.getRange)
             io.signalOut_imag := temp_imag_O.shorten(io.signalOut_imag.getRange)
         }.otherwise {
-            //val next_w = sigPosition/UInt(p.pt_position)
-            //val current_w = UInt(1) - next_w
-	    //println (current_w)
-            val tmp_weight_r = stored_Weight_r(PTCount)// * current_w
+//            val next_w = sigPosition/UInt(p.pt_position)
+//            val current_w = UInt(1) - next_w
+//	    println (current_w)
+//            val tmp_weight_r = stored_Weight_r(PTCount)*current_w
 	     // +stored_Weight_r(PTCount + UInt(1)) * next_w
             val tmp_weight_i = stored_Weight_i(PTCount)
 
@@ -121,7 +122,7 @@ class CEIO [T <: DSPQnm[T]](gen : => T, p : CEParams) extends IOBundle {
             val signalOut_imag_long = tmp_weight_i * io.signalIn_imag
 //     //     println (signalOut_real_long)
 //     //       val temp_real_O = signalOut_real_long $(p.frac_width)
-            val temp_imag_O = signalOut_imag_long $(p.frac_width)
+            val temp_imag_O = signalOut_imag_long $(io.signalOut_imag.getFracWidth)
        //     //io.signalOut_real := temp_real_O.shorten(io.signalOut_real.getRange)
             io.signalOut_imag := temp_imag_O.shorten(io.signalOut_imag.getRange)
         }
