@@ -22,8 +22,8 @@ for (i <- 0 until r_test_input.length){
           poke(c.io.signalIn_imag, i_test_input(i).toDouble)
 	  var r_output:Double = peek(c.io.signalOut_real)
 	  var i_output:Double = peek(c.io.signalOut_imag)
-	  r_writer.write(r_output.toString)
-	  i_writer.write(i_output.toString)
+	  r_writer.write(r_output.toString +"\n")
+	  i_writer.write(i_output.toString +"\n")
 	  step(1)
 	  }
 r_writer.close()
