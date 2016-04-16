@@ -10,8 +10,8 @@ import java.io._
 /** Module tester that allows switching between fixed and floating point testing */
 class CETests[T <: CE[_ <: DSPQnm[_]]](c: T) extends DSPTester(c) {
 
-val r_test_input = Source.fromFile("r_test.txt").getLines.toArray
-val i_test_input = Source.fromFile("i_test.txt").getLines.toArray
+val r_test_input = Source.fromFile("dirty_r.txt").getLines.toArray
+val i_test_input = Source.fromFile("dirty_i.txt").getLines.toArray
 
 val r_writer = new PrintWriter(new File("r_output.txt"))
 val i_writer = new PrintWriter(new File("i_output.txt"))

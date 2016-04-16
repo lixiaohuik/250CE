@@ -94,7 +94,7 @@ class CE[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
   val sigCount = RegInit(UInt(0,width = (math.ceil(math.log(p.frame_size)*4)).toInt))
   val PTCount =  RegInit(UInt(0,width = (math.ceil(math.log(pt_number)*4)).toInt))
   val sigPosition =  RegInit(UInt(0,width = (math.ceil(math.log(p.pt_position)*4)).toInt))  //Indicate the signal position in a ( PT DATA) block. so if sigPosition is equal to pt_position, it's a PT, other wise it's the position of the signal, the initial 1 should be assigned to 1 again after the first cycle
-  val IsPT = Bool(false) 
+  val IsPT = Bool(true) 
   
   val ceeq = DSPModule(new EQ(gen,p))  //declare sub circuits  
   val celms = DSPModule(new LMS(gen,p)) //declare sub circuits   
@@ -136,8 +136,8 @@ class CE[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
     PTCount := PTCount + UInt(1)
     sigPosition := UInt(0)
    //update the weight here
-    stored_Weight_r(PTCount) := (celms.io.cur_weight_r $ stored_Weight_r(0).getFracWidth).shorten(stored_Weight_r(0).getRange)
-    stored_Weight_i(PTCount) := (celms.io.cur_weight_i $ stored_Weight_i(0).getFracWidth).shorten(stored_Weight_i(0).getRange)
+    stored_Weight_r(PTCount) := (celms.io.new_weight_r $ stored_Weight_r(0).getFracWidth).shorten(stored_Weight_r(0).getRange)
+    stored_Weight_i(PTCount) := (celms.io.new_weight_i $ stored_Weight_i(0).getFracWidth).shorten(stored_Weight_i(0).getRange)
    }.otherwise {
     IsPT := Bool(false)
     sigPosition := sigPosition + UInt(1)
