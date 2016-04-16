@@ -13,6 +13,7 @@ import ChiselDSP._
 
 case class CEParams (
    interp:      Int     = 0,                   // 0: step , 1 : linear    
+   algorithm:   Int     = 1,                   // 0: lms, 1: sign
    mu:		Double	= 0.1,                 //step size
    alpha:	Double	= 1.0,                 //coefficient of older weight
    pt_position: Int	= 2,                   // # of signals between PT + 1 (pitch?)
@@ -42,10 +43,35 @@ class LMS[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
       val new_weight_r   = gen.cloneType(p.int_width,p.frac_width).asOutput 
       val new_weight_i   = gen.cloneType(p.int_width,p.frac_width).asOutput 
     }
-  override val io = new LMSIO(gen, p) 
-    val f_r = double2T(p.mu, (p.int_width,p.frac_width)) * io.error_r * io.signalIn_real
-    val f_i = double2T(p.mu, (p.int_width,p.frac_width)) * io.error_i * io.signalIn_imag
+  override val io = new LMSIO(gen, p)
+
+    val error_sign_r = Mux(io.error_r > double2T(0), double2T(1) , double2T(-1))
+    val error_sign_i = Mux(io.error_i > double2T(0), double2T(1) , double2T(-1))
+
+    val in_sign_r = Mux(io.signalIn_real > double2T(0), double2T(1) , double2T(-1))
+    val in_sign_i = Mux(io.signalIn_imag > double2T(0), double2T(1) , double2T(-1))
+    
+   // val f_r_sign = double2T(p.mu, (p.int_width,p.frac_width)) * error_sign_r * in_sign_r 
+   // val f_i_sign = double2T(p.mu, (p.int_width,p.frac_width)) * error_sign_i * in_sign_i 
  
+    val f_r_sign = double2T(p.mu, (p.int_width,p.frac_width)) * error_sign_r * io.signalIn_real 
+    val f_i_sign = double2T(p.mu, (p.int_width,p.frac_width)) * error_sign_i * io.signalIn_imag
+    
+    val f_r_lms = double2T(p.mu, (p.int_width,p.frac_width)) * io.error_r * io.signalIn_real
+    val f_i_lms = double2T(p.mu, (p.int_width,p.frac_width)) * io.error_i * io.signalIn_imag
+
+    //val f_r = Mux(UInt(p.algorithm) === UInt(0), f_r_lms, f_r_sign) //choose from lms or error sign
+    //val f_i = Mux(UInt(p.algorithm) === UInt(0), f_i_lms, f_i_sign)
+    val f_r = f_r_sign
+    val f_i = f_i_sign
+    when (UInt(p.algorithm)===UInt(0)){
+        f_r := f_r_lms
+	f_i := f_i_lms
+    }.otherwise{
+        f_r := f_r_sign
+	f_i := f_i_sign
+    }
+
     val stored_Weight_r_long = double2T(p.alpha,(p.int_width, p.frac_width)) * io.cur_weight_r + f_r
     val stored_Weight_i_long = double2T(p.alpha,(p.int_width, p.frac_width)) * io.cur_weight_i + f_i
    
@@ -114,11 +140,11 @@ class CE[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
   io.signalOut_imag := ceeq.io.signalOut_imag
   //Connect lms all the time as well
   celms.io.error_r := (error_r $ celms.io.error_r.getFracWidth).shorten(celms.io.error_r.getRange)
-  celms.io.signalIn_real := io.signalIn_real
+  celms.io.signalIn_real := io.signalOut_real
   celms.io.cur_weight_r := (cur_weight_r $ celms.io.cur_weight_r.getFracWidth).shorten(celms.io.cur_weight_r.getRange)
   
   celms.io.error_i := (error_i $ celms.io.error_i.getFracWidth).shorten(celms.io.error_i.getRange)
-  celms.io.signalIn_imag := io.signalIn_imag
+  celms.io.signalIn_imag := io.signalOut_imag
   celms.io.cur_weight_i := (cur_weight_i $ celms.io.cur_weight_i.getFracWidth).shorten(celms.io.cur_weight_i.getRange)
   //output only pass back to the reg if it is a PT
 
