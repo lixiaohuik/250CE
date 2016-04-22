@@ -15,7 +15,7 @@ import scala.collection.mutable.ListBuffer
 case class CEParams (
    interp:      Int     = 0,                   // 0: step , 1 : linear    
    algorithm:   Int     = 0,                   // 0: lms, 1: sign
-   mu:		Double	= 0.1,                 //step size
+   mu:		Double	= 0.05,                 //step size
    alpha:	Double	= 1.0,                 //coefficient of older weight
    pt_position: Int	= 2,                   // # of signals between PT + 1 (pitch?)
    frame_size: 	Int 	= 4,                   // # of sub-carriers
@@ -51,15 +51,18 @@ class LMS[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
     //val in_sign_r = Mux(io.signalIn_real > double2T(0), double2T(1) , double2T(-1)) //the input signal of lms is the output of the CE 
     //val in_sign_i = Mux(io.signalIn_imag > double2T(0), double2T(1) , double2T(-1))
     
-    val f_r_sign = double2T(p.mu, (p.int_width,p.frac_width)) * error_sign_r * io.signalIn_real 
-    val f_i_sign = double2T(p.mu, (p.int_width,p.frac_width)) * error_sign_i * io.signalIn_imag
-    
-    val f_r_lms = double2T(p.mu, (p.int_width,p.frac_width)) * io.error_r * io.signalIn_real
-    val f_i_lms = double2T(p.mu, (p.int_width,p.frac_width)) * io.error_i * io.signalIn_imag
-
-    val f_r = Mux(DSPBool(UInt(p.algorithm)===UInt(0)),f_r_lms,f_r_sign)
-    val f_i = Mux(DSPBool(UInt(p.algorithm)===UInt(0)),f_i_lms,f_i_sign)
+//    val f_r_sign = double2T(p.mu, (p.int_width,p.frac_width)) * error_sign_r * io.signalIn_real 
+//    val f_i_sign = double2T(p.mu, (p.int_width,p.frac_width)) * error_sign_i * io.signalIn_imag
+//    
+//    val f_r_lms = double2T(p.mu, (p.int_width,p.frac_width)) * io.error_r * io.signalIn_real
+//    val f_i_lms = double2T(p.mu, (p.int_width,p.frac_width)) * io.error_i * io.signalIn_imag
+//
+//    val f_r = Mux(DSPBool(UInt(p.algorithm)===UInt(0)),f_r_lms,f_r_sign)
+//    val f_i = Mux(DSPBool(UInt(p.algorithm)===UInt(0)),f_i_lms,f_i_sign)
    
+    val f_r = double2T(p.mu, (p.int_width,p.frac_width)) * io.error_r * io.signalIn_real
+    val f_i = double2T(p.mu, (p.int_width,p.frac_width)) * io.error_i * io.signalIn_imag
+    
     val stored_Weight_r_long = double2T(p.alpha,(p.int_width, p.frac_width)) * io.cur_weight_r + f_r
     val stored_Weight_i_long = double2T(p.alpha,(p.int_width, p.frac_width)) * io.cur_weight_i + f_i
    
@@ -78,26 +81,24 @@ class EQ[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
       val signalOut_imag = gen.cloneType(p.int_width,p.frac_width).asOutput
       val weight_r_2       = gen.cloneType(p.int_width,p.frac_width).asInput   //needed for linear interpolation
       val weight_i_2       = gen.cloneType(p.int_width,p.frac_width).asInput 
-      val sigPosition     = UInt(INPUT, p.frame_size)
-//      val sigPosition     = Dbl(INPUT)
+      val sigPosition      = gen.cloneType(3,1).asInput 
     }
   override val io = new EQIO(gen, p) 
 // create LUT look up table for fractions used for linear interpolation
-      val cur_frac = Vector(1.00,0.5,0.3333,0.25,0.2)
-      val nex_frac = Vector(0   ,0.5,0.6666,0.75,0.8)
-
-      //val cur_w = DSPDbl(cur_frac(p.pt_position)) * DSPDbl(io.sigPosition)
-      //val nex_w = DSPDbl(nex_frac(p.pt_position)) * DSPDbl(io.sigPosition)
-
-//      val cur_w = double2T(cur_frac(p.pt_position) * io.sigPosition)
-//      val nex_w = double2T(nex_frac(p.pt_position) * io.sigPosition.todouble)
-//      val cur_w = Mux (UInt(p.interp) === UInt(0), 1,)
-//      val w_r = double2T(Double(cur_w * io.weight_r + nex_w *io.weight_r_2))//TODO
-//      val w_r = cur_w * io.weight_r + nex_w *io.weight_r_2
-
-//      val signalOut_real_long = w_r * io.signalIn_real
       val signalOut_real_long = io.weight_r * io.signalIn_real
       val signalOut_imag_long = io.weight_i * io.signalIn_imag
+      
+//      if (p.interp == 1){
+//      val frac = Vector(1.00,0.5,0.3333,0.25,0.2)
+//
+//      val cur_w_frac = double2T(1.0 - frac(p.pt_position)) * io.sigPosition
+//      val nex_w_frac = double2T(frac(p.pt_position)) * io.sigPosition
+//
+//      val linear_w_r = cur_w_frac * io.weight_r + nex_w_frac *io.weight_r_2
+//      val linear_w_i = cur_w_frac * io.weight_i + nex_w_frac *io.weight_i_2
+//      signalOut_real_long := linear_w_r * io.signalIn_real
+//      signalOut_imag_long := linear_w_i * io.signalIn_imag
+//      }
       io.signalOut_real := (signalOut_real_long $(io.signalOut_real.getFracWidth)).shorten(io.signalOut_real.getRange)
       io.signalOut_imag := (signalOut_imag_long $(io.signalOut_imag.getFracWidth)).shorten(io.signalOut_imag.getRange)
 }
@@ -114,7 +115,7 @@ class CE[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
 
   override val io = new CEIO(gen, p) 
   //useful numbers
-  val pt_number = (math.ceil(p.frame_size.toDouble/p.pt_position.toDouble)).toInt 
+  val pt_number = (math.ceil(p.frame_size.toDouble/p.pt_position.toDouble)+ 1).toInt 
   val stored_Weight_r = Vec.fill(pt_number){RegInit(double2T(1.0, (p.int_width,p.frac_width)))}
   val stored_Weight_i = Vec.fill(pt_number){RegInit(double2T(1.0, (p.int_width,p.frac_width)))}
 
@@ -122,10 +123,9 @@ class CE[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
   val pt_value_i = double2T(p.pt_value_i, (p.int_width,p.frac_width))
 
   val sigCount = RegInit(UInt(0,width = (math.ceil(math.log(p.frame_size+1)*4)).toInt))
-  val PTCount =  RegInit(UInt(0,width = (math.ceil(math.log(pt_number+1)*4)).toInt))
-  //val sigPosition =  RegInit(UInt(0,width = (math.ceil(math.log(p.pt_position)*4)).toInt))  //Indicate the signal position in a ( PT DATA) block. so if sigPosition is equal to pt_position, it's a PT
-  val sigPosition =  RegInit(UInt(0,width = (math.ceil(math.log(p.pt_position+1)*4)).toInt))  //Indicate the signal position in a ( PT DATA) block. so if sigPosition is equal to pt_position, it's a PT
- // val sigPosition =  RegInit(Dbl(0))
+  val PTCount =  RegInit(UInt(1,width = (math.ceil(math.log(pt_number+1)*4)).toInt))
+  val sigPosition =  RegInit(UInt(0,width = (math.ceil(math.log(p.pt_position+1)*4)).toInt))  //Indicate the signal position in a ( PT DATA) block
+  val sigPosition_dbl =  RegInit(double2T(0, (p.int_width,p.frac_width)))  //Same as sigPosition
   val IsPT = RegInit(Bool(true)) 
   
   val ceeq = DSPModule(new EQ(gen,p))  //declare sub circuits  
@@ -134,8 +134,10 @@ class CE[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
   val cur_weight_r = stored_Weight_r(PTCount)
   val cur_weight_i = stored_Weight_i(PTCount)
 //for linear interpolation
-  val sec_weight_r = Mux(DSPBool(PTCount=== UInt(pt_number)),stored_Weight_r(PTCount),stored_Weight_r(PTCount + UInt(1))) 
-  val sec_weight_i = Mux(DSPBool(PTCount=== UInt(pt_number)),stored_Weight_i(PTCount),stored_Weight_i(PTCount + UInt(1))) 
+  //val sec_weight_r = stored_Weight_r(PTCount+UInt(1))
+  //val sec_weight_i = stored_Weight_i(PTCount+UInt(1))
+  val sec_weight_r = stored_Weight_r(PTCount)
+  val sec_weight_i = stored_Weight_i(PTCount)
 
   val error_r = pt_value_r - io.signalOut_real
   val error_i = pt_value_i - io.signalOut_imag
@@ -150,7 +152,9 @@ class CE[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
   ceeq.io.weight_i_2 := (sec_weight_i $ ceeq.io.weight_i_2.getFracWidth).shorten(ceeq.io.weight_i_2.getRange)
   io.signalOut_imag := ceeq.io.signalOut_imag
   
-  ceeq.io.sigPosition := sigPosition
+  ceeq.io.sigPosition := (sigPosition_dbl $ ceeq.io.sigPosition.getFracWidth).shorten(ceeq.io.sigPosition.getRange)//no double2T?
+
+
   //Connect lms all the time as well
   celms.io.error_r := (error_r $ celms.io.error_r.getFracWidth).shorten(celms.io.error_r.getRange)
   celms.io.signalIn_real := io.signalOut_real
@@ -159,28 +163,45 @@ class CE[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
   celms.io.error_i := (error_i $ celms.io.error_i.getFracWidth).shorten(celms.io.error_i.getRange)
   celms.io.signalIn_imag := io.signalOut_imag
   celms.io.cur_weight_i := (cur_weight_i $ celms.io.cur_weight_i.getFracWidth).shorten(celms.io.cur_weight_i.getRange)
-  //output only pass back to the reg if it is a PT
+
+debug (sigCount)
+debug (PTCount)
+debug (sigPosition)
 
 
-  when (sigCount =/= UInt(p.frame_size)){
-    sigCount := sigCount + UInt(1)
-  }.otherwise{
-    sigCount := UInt(0)
-    PTCount := UInt(0)
-  }
- 
-//  when (sigCount%UInt(p.pt_position) === UInt(0) ) {//input is a PT
-// when (UInt(sigPosition) === UInt(p.pt_position)  || (sigCount === UInt(0))){ //input is a PT
-  when (UInt(sigPosition) === (UInt(p.pt_position)-UInt(1))){ //input is a PT
-    IsPT := Bool(true)
+  when (sigPosition === UInt(p.pt_position) ){ //next input is a PT
+    sigPosition := UInt(1)
+    sigPosition_dbl := double2T(1, (p.int_width,p.frac_width))
+    
     PTCount := PTCount + UInt(1)
-    sigPosition := UInt(0)
+          when (sigCount === UInt(p.frame_size)){
+            sigCount := UInt(1)
+            PTCount := UInt(1)
+          }.otherwise{
+            sigCount := sigCount + UInt(1)
+          }
+   }.elsewhen(sigPosition === UInt(1) ){
+    sigPosition := sigPosition + UInt(1)
+    sigPosition_dbl := ((sigPosition_dbl + double2T(1.0)) $ p.frac_width).shorten(sigPosition_dbl.getRange)
    //update the weight here
     stored_Weight_r(PTCount) := (celms.io.new_weight_r $ stored_Weight_r(0).getFracWidth).shorten(stored_Weight_r(0).getRange)
     stored_Weight_i(PTCount) := (celms.io.new_weight_i $ stored_Weight_i(0).getFracWidth).shorten(stored_Weight_i(0).getRange)
+          when (sigCount === UInt(p.frame_size)){
+            sigCount := UInt(1)
+            PTCount := UInt(1)
+          }.otherwise{
+            sigCount := sigCount + UInt(1)
+          }
+   
    }.otherwise {
-    IsPT := Bool(false)
     sigPosition := sigPosition + UInt(1)
+    sigPosition_dbl := ((sigPosition_dbl + double2T(1.0)) $ p.frac_width).shorten(sigPosition_dbl.getRange)
+          when (sigCount === UInt(p.frame_size)){
+            sigCount := UInt(1)
+            PTCount := UInt(1)
+          }.otherwise{
+            sigCount := sigCount + UInt(1)
+          }
    }
 }
 //        println (test.getFracWidth)
