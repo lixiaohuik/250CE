@@ -19,6 +19,7 @@ val i_writer = new PrintWriter(new File("i_output.txt"))
 peek (c.sigCount)
 step(1)
 for (i <- 0 until i_test_input.length){
+//for (i <- 0 until 20){
           poke(c.io.signalIn_real, r_test_input(i).toDouble)
           poke(c.io.signalIn_imag, i_test_input(i).toDouble)
           peek (c.sigCount)
@@ -35,20 +36,4 @@ for (i <- 0 until i_test_input.length){
 	  }
 r_writer.close()
 i_writer.close()
-
-//poke(c.io.signalIn_real, 2.0)
-//poke(c.io.signalIn_imag, 2.0)
-//expect(c.io.signalOut_real, 1.8)
-//expect(c.io.signalOut_imag, 1.8)
-//step (1)
-//poke(c.io.signalIn_real, 2.0)
-//poke(c.io.signalIn_imag, 2.0)
-//expect(c.io.signalOut_real, 1.8)
-//expect(c.io.signalOut_imag, 1.8)
-//step (1)
-//poke(c.io.signalIn_real, 2.0)
-//poke(c.io.signalIn_imag, 2.0)
-//expect(c.io.signalOut_real, 1.8)
-//expect(c.io.signalOut_imag, 1.8)
-//step (1)
 }

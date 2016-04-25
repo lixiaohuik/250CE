@@ -13,8 +13,8 @@ import scala.collection.mutable.ListBuffer
 // assum have the pilot tone first?
 
 case class CEParams (
-   interp:      Int     = 0,                   // 0: step , 1 : linear    
-   algorithm:   Int     = 1,                   // 0: lms, 1: sign
+   interp:      Int     = 1,                   // 0: step , 1 : linear    
+   algorithm:   Int     = 0,                   // 0: lms, 1: sign
    mu:		Double	= 0.05,                 //step size
    alpha:	Double	= 1.0,                 //coefficient of older weight
    pt_position: Int	= 2,                   // # of signals between PT + 1 (pitch?)
@@ -49,7 +49,7 @@ class LMS[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
   //  val stored_Weight_r_long = double2T(p.alpha,(p.int_width, p.frac_width)) * io.cur_weight_r 
   //  val stored_Weight_i_long = double2T(p.alpha,(p.int_width, p.frac_width)) * io.cur_weight_i 
    
-    if (p.algorithm == 0){
+    if (p.algorithm == 0){//lms
         val f_r_lms = double2T(p.mu, (p.int_width,p.frac_width)) * io.error_r * io.signalIn_real
         val f_i_lms = double2T(p.mu, (p.int_width,p.frac_width)) * io.error_i * io.signalIn_imag
 
@@ -58,7 +58,7 @@ class LMS[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
         io.new_weight_r := (stored_Weight_r_long $ io.new_weight_r.getFracWidth).shorten(io.new_weight_r.getRange)
         io.new_weight_i := (stored_Weight_i_long $ io.new_weight_i.getFracWidth).shorten(io.new_weight_i.getRange)
       }
-      else{
+      else{//error sign
         //val error_sign_r = Mux(io.error_r > double2T(0), double2T(1) , double2T(-1, (p.int_width,p.frac_width)))
         //val error_sign_i = Mux(io.error_i > double2T(0), double2T(1) , double2T(-1, (p.int_width,p.frac_width)))
         when(io.error_r > double2T(0)){
@@ -100,22 +100,25 @@ class EQ[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
     }
   override val io = new EQIO(gen, p) 
 // create LUT look up table for fractions used for linear interpolation
-      val signalOut_real_long = io.weight_r * io.signalIn_real
-      val signalOut_imag_long = io.weight_i * io.signalIn_imag
       
-      if (p.interp == 1){
-      val frac = Vector(1.00,0.5,0.3333,0.25,0.2)
+      if (p.interp == 1){//linear
+      val frac = Vector(1.00,0.5,0.3333,0.25,0.2,0.16667)
 
-      val cur_w_frac = double2T(1.0 - frac(p.pt_position)) * io.sigPosition
-      val nex_w_frac = double2T(frac(p.pt_position)) * io.sigPosition
-
+      val nex_w_frac = double2T(frac(p.pt_position)) * (io.sigPosition-double2T(1.0))
+      val cur_w_frac = double2T(1.0) - nex_w_frac
       val linear_w_r = cur_w_frac * io.weight_r + nex_w_frac *io.weight_r_2
       val linear_w_i = cur_w_frac * io.weight_i + nex_w_frac *io.weight_i_2
-      signalOut_real_long := linear_w_r * io.signalIn_real
-      signalOut_imag_long := linear_w_i * io.signalIn_imag
-      }
+      val signalOut_real_long = linear_w_r * io.signalIn_real
+      val signalOut_imag_long = linear_w_i * io.signalIn_imag
       io.signalOut_real := (signalOut_real_long $(io.signalOut_real.getFracWidth)).shorten(io.signalOut_real.getRange)
       io.signalOut_imag := (signalOut_imag_long $(io.signalOut_imag.getFracWidth)).shorten(io.signalOut_imag.getRange)
+      }
+      else{
+      val signalOut_real_long = io.weight_r * io.signalIn_real
+      val signalOut_imag_long = io.weight_i * io.signalIn_imag
+      io.signalOut_real := (signalOut_real_long $(io.signalOut_real.getFracWidth)).shorten(io.signalOut_real.getRange)
+      io.signalOut_imag := (signalOut_imag_long $(io.signalOut_imag.getFracWidth)).shorten(io.signalOut_imag.getRange)
+      }
 }
 
 class CE[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
@@ -149,10 +152,10 @@ class CE[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
   val cur_weight_r = stored_Weight_r(PTCount)
   val cur_weight_i = stored_Weight_i(PTCount)
 //for linear interpolation
-  //val sec_weight_r = stored_Weight_r(PTCount+UInt(1))
-  //val sec_weight_i = stored_Weight_i(PTCount+UInt(1))
-  val sec_weight_r = stored_Weight_r(PTCount)
-  val sec_weight_i = stored_Weight_i(PTCount)
+  val sec_weight_r = stored_Weight_r(PTCount+UInt(1))
+  val sec_weight_i = stored_Weight_i(PTCount+UInt(1))
+//  val sec_weight_r = stored_Weight_r(PTCount)
+//  val sec_weight_i = stored_Weight_i(PTCount)
 
   val error_r = pt_value_r - io.signalOut_real
   val error_i = pt_value_i - io.signalOut_imag
