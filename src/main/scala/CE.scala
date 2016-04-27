@@ -23,7 +23,7 @@ case class CEParams (
    max_value: 	Double 	= 127.0,				// DSPFixed uses max value to determine bit width rather than actual bit width,
    frac_width:	Int	= 20,				// DSPFixed has extra argument for fraction width,
    int_width:	Int	= 3,				// DSPFixed has extra argument for fraction width,
-   pipeline:	Int	= 1,		       // 0 for no pipeline, 1 for 1 pipeline
+   pipeline:	Int	= 2,		       // 0 for no pipeline, 1 for 1 pipeline
 
   // At some point I'd like to make width > 1 so the pt_values should be vectors rather than one value once that happens
    //pt_value_r: 	DSPFixed = DSPFixed(1.0, 32),	
@@ -96,26 +96,28 @@ class LMS[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
       else{//error sign
         val f_r_sign_reg = RegInit(double2T(1.0, (p.int_width,p.frac_width)))
         val f_i_sign_reg = RegInit(double2T(1.0, (p.int_width,p.frac_width)))
-        
-	when(io.error_r > double2T(0)){
-	  val f_r_sign = double2T(p.mu, (p.int_width,p.frac_width)) * io.signalIn_real 
+        val error_r_reg = RegInit(double2T(1.0, (p.int_width,p.frac_width)))
+        val error_i_reg = RegInit(double2T(1.0, (p.int_width,p.frac_width)))
+	val f_r_sign = double2T(p.mu, (p.int_width,p.frac_width)) * io.signalIn_real 
+	val f_i_sign = double2T(p.mu, (p.int_width,p.frac_width)) * io.signalIn_imag
+        when(Bool(true)){
           f_r_sign_reg := (f_r_sign $ f_r_sign_reg.getFracWidth)
+          f_i_sign_reg := (f_i_sign $ f_i_sign_reg.getFracWidth)
+          error_r_reg  := io.error_r
+          error_i_reg  := io.error_i
+	  }
+        
+	when(error_r_reg > double2T(0)){
           val stored_Weight_r_long = double2T(p.alpha,(p.int_width, p.frac_width)) * io.cur_weight_r + f_r_sign_reg
         io.new_weight_r := (stored_Weight_r_long $ io.new_weight_r.getFracWidth).shorten(io.new_weight_r.getRange)
 	}.otherwise{
-	  val f_r_sign = double2T(p.mu, (p.int_width,p.frac_width)) * io.signalIn_real 
-          f_r_sign_reg := (f_r_sign $ f_r_sign_reg.getFracWidth)
           val stored_Weight_r_long = double2T(p.alpha,(p.int_width, p.frac_width)) * io.cur_weight_r - f_r_sign_reg
         io.new_weight_r := (stored_Weight_r_long $ io.new_weight_r.getFracWidth).shorten(io.new_weight_r.getRange)
 	}
-        when(io.error_i > double2T(0)){
-	  val f_i_sign = double2T(p.mu, (p.int_width,p.frac_width)) * io.signalIn_imag
-          f_i_sign_reg := (f_i_sign $ f_i_sign_reg.getFracWidth)
+        when(error_i_reg > double2T(0)){
           val stored_Weight_i_long = double2T(p.alpha,(p.int_width, p.frac_width)) * io.cur_weight_i + f_i_sign_reg
         io.new_weight_i := (stored_Weight_i_long $ io.new_weight_i.getFracWidth).shorten(io.new_weight_i.getRange)
 	}.otherwise{
-	  val f_i_sign = double2T(p.mu, (p.int_width,p.frac_width)) * io.signalIn_imag 
-          f_i_sign_reg := (f_i_sign $ f_i_sign_reg.getFracWidth)
           val stored_Weight_i_long = double2T(p.alpha,(p.int_width, p.frac_width)) * io.cur_weight_i - f_i_sign_reg
         io.new_weight_i := (stored_Weight_i_long $ io.new_weight_i.getFracWidth).shorten(io.new_weight_i.getRange)
 	}
