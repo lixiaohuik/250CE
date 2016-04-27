@@ -17,13 +17,13 @@ case class CEParams (
    algorithm:   Int     = 0,                   // 0: lms, 1: sign
    mu:		Double	= 0.05,                 //step size
    alpha:	Double	= 1.0,                 //coefficient of older weight
-   pt_position: Int	= 8,                   // # of signals between PT + 1 (pitch?)
-   frame_size: 	Int 	= 16,                   // # of sub-carriers
+   pt_position: Int	= 2,                   // # of signals between PT + 1 (pitch?)
+   frame_size: 	Int 	= 4,                   // # of sub-carriers
    min_value:	Double  = -127.0,			// DSPFixed uses min value to determine bit width rather than actual bit width,
    max_value: 	Double 	= 127.0,				// DSPFixed uses max value to determine bit width rather than actual bit width,
    frac_width:	Int	= 20,				// DSPFixed has extra argument for fraction width,
    int_width:	Int	= 3,				// DSPFixed has extra argument for fraction width,
-   pipeline:	Int	= 0,		       // 0 for no pipeline, 1 for 1 pipeline
+   pipeline:	Int	= 2,		       // 0 for no pipeline, 1 for 1 pipeline
 
   // At some point I'd like to make width > 1 so the pt_values should be vectors rather than one value once that happens
    //pt_value_r: 	DSPFixed = DSPFixed(1.0, 32),	
@@ -169,7 +169,6 @@ class CE[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
       val signalOut_real = gen.cloneType(p.int_width,p.frac_width).asOutput
       val signalOut_imag = gen.cloneType(p.int_width,p.frac_width).asOutput
     }
-
   override val io = new CEIO(gen, p) 
   //useful numbers
   val pt_number = (math.ceil(p.frame_size.toDouble/p.pt_position.toDouble)+ 1).toInt 
@@ -248,7 +247,7 @@ class CE[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
     io.signalOut_imag := ceeq.io.signalOut_imag
   } else {
     io.signalOut_real := eq_out_real_reg
-    io.signalOut_imag := eq_out_imag_reg
+    io.signalOut_imag := eq_out_imag_reg  //original working version
   }
 
   //Connect lms all the time as well
