@@ -13,7 +13,7 @@ import scala.collection.mutable.ListBuffer
 // assum have the pilot tone first?
 
 case class CEParams (
-   interp:      Int     = 0,                   // 0: step , 1 : linear    
+   interp:      Int     = 1,                   // 0: step , 1 : linear    
    algorithm:   Int     = 0,                   // 0: lms, 1: sign
    mu:		Double	= 0.05,                 //step size
    alpha:	Double	= 1.0,                 //coefficient of older weight
@@ -23,7 +23,7 @@ case class CEParams (
    max_value: 	Double 	= 127.0,				// DSPFixed uses max value to determine bit width rather than actual bit width,
    frac_width:	Int	= 20,				// DSPFixed has extra argument for fraction width,
    int_width:	Int	= 3,				// DSPFixed has extra argument for fraction width,
-   pipeline:	Int	= 2,		       // 0 for no pipeline, 1 for 1 pipeline
+   pipeline:	Int	= 1,		       // 0 for no pipeline, 1 for 1 pipeline
 
   // At some point I'd like to make width > 1 so the pt_values should be vectors rather than one value once that happens
    //pt_value_r: 	DSPFixed = DSPFixed(1.0, 32),	
@@ -169,6 +169,7 @@ class CE[T <: DSPQnm[T]](gen : => T, p : CEParams) extends GenDSPModule (gen) {
       val signalOut_real = gen.cloneType(p.int_width,p.frac_width).asOutput
       val signalOut_imag = gen.cloneType(p.int_width,p.frac_width).asOutput
     }
+
   override val io = new CEIO(gen, p) 
   //useful numbers
   val pt_number = (math.ceil(p.frame_size.toDouble/p.pt_position.toDouble)+ 1).toInt 

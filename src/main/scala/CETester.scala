@@ -30,6 +30,8 @@ for (i <- 0 until i_test_input.length){
           peek (c.celms.io.new_weight_r)
 	  var r_output:Double = peek(c.io.signalOut_real)
 	  var i_output:Double = peek(c.io.signalOut_imag)
+	  //var r_output:Double = peek(c.io.fpga_signalOut_real)
+	  //var i_output:Double = peek(c.io.fpga_signalOut_imag)
 	  r_writer.write(r_output.toString +"\n")
 	  i_writer.write(i_output.toString +"\n")
 	  step(1)
