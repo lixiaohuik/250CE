@@ -14,16 +14,16 @@ import scala.collection.mutable.ListBuffer
 
 case class CEParams (
    interp:      Int     = 1,                   // 0: step , 1 : linear    
-   algorithm:   Int     = 0,                   // 0: lms, 1: sign
+   algorithm:   Int     = 1,                   // 0: lms, 1: sign
    mu:		Double	= 0.05,                 //step size
    alpha:	Double	= 1.0,                 //coefficient of older weight
-   pt_position: Int	= 2,                   // # of signals between PT + 1 (pitch?)
-   frame_size: 	Int 	= 4,                   // # of sub-carriers
+   pt_position: Int	= 4,                   // # of signals between PT + 1 (pitch?)
+   frame_size: 	Int 	= 16,                   // # of sub-carriers
    min_value:	Double  = -127.0,			// DSPFixed uses min value to determine bit width rather than actual bit width,
    max_value: 	Double 	= 127.0,				// DSPFixed uses max value to determine bit width rather than actual bit width,
    frac_width:	Int	= 20,				// DSPFixed has extra argument for fraction width,
-   int_width:	Int	= 3,				// DSPFixed has extra argument for fraction width,
-   pipeline:	Int	= 2,		       // 0 for no pipeline, 1 for 1 pipeline
+   int_width:	Int	= 6,				// DSPFixed has extra argument for fraction width,
+   pipeline:	Int	= 0,		       // 0 for no pipeline, 1 for 1 pipeline
 
   // At some point I'd like to make width > 1 so the pt_values should be vectors rather than one value once that happens
    //pt_value_r: 	DSPFixed = DSPFixed(1.0, 32),	
